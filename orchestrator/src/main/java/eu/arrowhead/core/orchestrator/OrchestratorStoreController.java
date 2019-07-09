@@ -52,6 +52,7 @@ public class OrchestratorStoreController {
 	
 	private static final String PATH_VARIABLE_ID = "id";
 	private static final String PATH_VARIABLE_SYSTEM_NAME = "systemName";
+	private static final String PATH_VARIABLE_SERVICEDEFINITION = "serviceDef";
 	
 	private static final String ORCHESTRATOR_STORE_MGMT_BY_ID_URI = CommonConstants.ORCHESTRATOR_STORE_MGMT_URI + "/{" + PATH_VARIABLE_ID + "}";
 	private static final String ORCHESTRATOR_STORE_MGMT_ALL_TOP_PRIORITY = CommonConstants.ORCHESTRATOR_STORE_MGMT_URI + "/all_topPriority";
@@ -68,6 +69,14 @@ public class OrchestratorStoreController {
 	private static final String POST_ORCHESTRATOR_STORE_MGMT_MODIFY_HTTP_400_MESSAGE = "Could not create OrchestratorStore by requested parameters";
 	
 	private static final String ORCHESTRATOR_STORE_BY_CONSUMER_URI = CommonConstants.ORCHESTRATOR_STORE_URI + "/consumername/{" + PATH_VARIABLE_SYSTEM_NAME + "}";
+	private static final String ORCHESTRATOR_STORE_BY_CONSUMER_AND_SERVICEDEFINITION_URI = 
+			CommonConstants.ORCHESTRATOR_STORE_URI + 
+			"/consumername/{" + 
+			PATH_VARIABLE_SYSTEM_NAME + 
+			"}" +
+			"/servicedef/{" + 
+			PATH_VARIABLE_SERVICEDEFINITION + 
+			"}";
 	
 	private static final String NOT_VALID_PARAMETERS_ERROR_MESSAGE = "Not valid request parameters.";
 	private static final String ID_NOT_VALID_ERROR_MESSAGE = "Id must be greater than 0. ";
@@ -333,6 +342,35 @@ public class OrchestratorStoreController {
 		}
 		final String validConsumerSystemName = consumerSystemName.trim().toLowerCase();
 		final OrchestratorStoreListResponseDTO orchestratorStoreResponse = orchestratorStoreDBService.getAllTopPriorityOrchestratorStoreEntriesByConsumerResponse(validConsumerSystemName);
+		logger.debug("OrchestratorStores retrieved successfully");
+		return orchestratorStoreResponse;
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@ApiOperation(value = "Return requested OrchestratorStore entries by the given parameters", response = OrchestratorStoreListResponseDTO.class)
+	@ApiResponses (value = {
+			@ApiResponse(code = HttpStatus.SC_OK, message = GET_ORCHESTRATOR_STORE_MGMT_HTTP_200_MESSAGE),
+			@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = GET_ORCHESTRATOR_STORE_MGMT_HTTP_400_MESSAGE),
+			@ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = CommonConstants.SWAGGER_HTTP_401_MESSAGE),
+			@ApiResponse(code = HttpStatus.SC_INTERNAL_SERVER_ERROR, message = CommonConstants.SWAGGER_HTTP_500_MESSAGE)
+	})
+	@GetMapping(path = ORCHESTRATOR_STORE_BY_CONSUMER_AND_SERVICEDEFINITION_URI, produces = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody public OrchestratorStoreListResponseDTO getStoreEntries(
+			@PathVariable(value = PATH_VARIABLE_SYSTEM_NAME)  final String consumerSystemName,
+			@PathVariable(value = PATH_VARIABLE_SERVICEDEFINITION)  final String serviceDefinition) {
+		logger.debug("getStoreEntries started ...");
+		
+		if (Utilities.isEmpty(consumerSystemName)) {
+			throw new BadPayloadException("ConsumerSystemName" + EMPTY_PARAMETERS_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST, ORCHESTRATOR_STORE_BY_CONSUMER_URI);
+		}
+		if (Utilities.isEmpty(serviceDefinition)) {
+			throw new BadPayloadException("ServiceDefinition" + EMPTY_PARAMETERS_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST, ORCHESTRATOR_STORE_BY_CONSUMER_URI);
+		}
+		
+		final String validConsumerSystemName = consumerSystemName.trim().toLowerCase();
+		final String validServiceDefinition = serviceDefinition.trim().toLowerCase();
+		
+		final OrchestratorStoreListResponseDTO orchestratorStoreResponse = orchestratorStoreDBService.getStoreEntriesResponse(validConsumerSystemName, validServiceDefinition);
 		logger.debug("OrchestratorStores retrieved successfully");
 		return orchestratorStoreResponse;
 	}
