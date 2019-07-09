@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import eu.arrowhead.common.CommonConstants;
 import eu.arrowhead.common.Defaults;
+import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.dto.OrchestratorStoreListResponseDTO;
 import eu.arrowhead.common.dto.OrchestratorStoreModifyPriorityRequestDTO;
 import eu.arrowhead.common.dto.OrchestratorStoreRequestByIdDTO;
@@ -50,6 +51,8 @@ public class OrchestratorStoreController {
 	private static final String ECHO_URI = "/echo";
 	
 	private static final String PATH_VARIABLE_ID = "id";
+	private static final String PATH_VARIABLE_SYSTEM_NAME = "systemName";
+	
 	private static final String ORCHESTRATOR_STORE_MGMT_BY_ID_URI = CommonConstants.ORCHESTRATOR_STORE_MGMT_URI + "/{" + PATH_VARIABLE_ID + "}";
 	private static final String ORCHESTRATOR_STORE_MGMT_ALL_TOP_PRIORITY = CommonConstants.ORCHESTRATOR_STORE_MGMT_URI + "/all_topPriority";
 	private static final String ORCHESTRATOR_STORE_MGMT_MODIFY = CommonConstants.ORCHESTRATOR_STORE_MGMT_URI + "/modify";
@@ -63,6 +66,8 @@ public class OrchestratorStoreController {
 	private static final String DELETE_ORCHESTRATOR_STORE_MGMT_HTTP_400_MESSAGE = "Could not remove OrchestratorStore";
 	private static final String POST_ORCHESTRATOR_STORE_MGMT_MODIFY_HTTP_200_MESSAGE = "OrchestratorStores by requested parameters created";
 	private static final String POST_ORCHESTRATOR_STORE_MGMT_MODIFY_HTTP_400_MESSAGE = "Could not create OrchestratorStore by requested parameters";
+	
+	private static final String ORCHESTRATOR_STORE_BY_CONSUMER_URI = CommonConstants.ORCHESTRATOR_STORE_URI + "/consumername/{" + PATH_VARIABLE_SYSTEM_NAME + "}";
 	
 	private static final String NOT_VALID_PARAMETERS_ERROR_MESSAGE = "Not valid request parameters.";
 	private static final String ID_NOT_VALID_ERROR_MESSAGE = "Id must be greater than 0. ";
@@ -296,6 +301,40 @@ public class OrchestratorStoreController {
 		orchestratorStoreDBService.modifyOrchestratorStorePriorityResponse(request);
 		
 		logger.debug("Priorities modified successfully");
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@ApiOperation(value = "Return an echo message with the purpose of testing the core service availability", response = String.class)
+	@ApiResponses(value = {
+			@ApiResponse(code = HttpStatus.SC_OK, message = CommonConstants.SWAGGER_HTTP_200_MESSAGE),
+			@ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = CommonConstants.SWAGGER_HTTP_401_MESSAGE),
+			@ApiResponse(code = HttpStatus.SC_INTERNAL_SERVER_ERROR, message = CommonConstants.SWAGGER_HTTP_500_MESSAGE)
+	})
+	@GetMapping(path = CommonConstants.ORCHESTRATOR_STORE_URI + ECHO_URI)
+	public String echoNonMGMTService() {
+		return "Got it!";
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@ApiOperation(value = "Return requested OrchestratorStore entries by the given parameters", response = OrchestratorStoreListResponseDTO.class)
+	@ApiResponses (value = {
+			@ApiResponse(code = HttpStatus.SC_OK, message = GET_ORCHESTRATOR_STORE_MGMT_HTTP_200_MESSAGE),
+			@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = GET_ORCHESTRATOR_STORE_MGMT_HTTP_400_MESSAGE),
+			@ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = CommonConstants.SWAGGER_HTTP_401_MESSAGE),
+			@ApiResponse(code = HttpStatus.SC_INTERNAL_SERVER_ERROR, message = CommonConstants.SWAGGER_HTTP_500_MESSAGE)
+	})
+	@GetMapping(path = ORCHESTRATOR_STORE_BY_CONSUMER_URI, produces = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody public OrchestratorStoreListResponseDTO getAllTopPriorityOrchestratorStoresByConsumer(
+			@PathVariable(value = PATH_VARIABLE_SYSTEM_NAME)  final String consumerSystemName) {
+		logger.debug("getAllTopPriorityOrchestratorStoresByConsumer started ...");
+		
+		if (Utilities.isEmpty(consumerSystemName)) {
+			throw new BadPayloadException("ConsumerSystemName" + EMPTY_PARAMETERS_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST, ORCHESTRATOR_STORE_BY_CONSUMER_URI);
+		}
+		final String validConsumerSystemName = consumerSystemName.trim().toLowerCase();
+		final OrchestratorStoreListResponseDTO orchestratorStoreResponse = orchestratorStoreDBService.getAllTopPriorityOrchestratorStoreEntriesByConsumerResponse(validConsumerSystemName);
+		logger.debug("OrchestratorStores retrieved successfully");
+		return orchestratorStoreResponse;
 	}
 	
 	//=================================================================================================

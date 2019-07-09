@@ -316,6 +316,29 @@ public class OrchestratorStoreDBService {
 		}
 		
 	}
+
+	//-------------------------------------------------------------------------------------------------	
+	public OrchestratorStoreListResponseDTO getAllTopPriorityOrchestratorStoreEntriesByConsumerResponse(
+			String consumerSystemName) {
+		logger.debug("getAllTopPriorityOrchestratorStoreEntriesByConsumerResponse started...");
+			
+		try {
+			
+			if (Utilities.isEmpty(consumerSystemName.trim())) {
+				throw new InvalidParameterException("OrchestratorStoreRequestDTOList " + EMPTY_OR_NULL_ERROR_MESAGE);
+			}
+			
+			List<OrchestratorStore> orchestratorStoreList = orchestratorStoreRepository.findAllByPriority(CommonConstants.TOP_PRIORITY, consumerSystemName);
+			
+			return DTOConverter.convertOrchestratorStoreEntryListToOrchestratorStoreListResponseDTO(orchestratorStoreList);
+			
+		} catch (final InvalidParameterException ex) {
+			throw ex;
+		} catch (final Exception ex) {
+			logger.debug(ex.getMessage(), ex);
+			throw new ArrowheadException(CommonConstants.DATABASE_OPERATION_EXCEPTION_MSG);
+		}
+	}
 	
 	//=================================================================================================
 	// assistant methods
