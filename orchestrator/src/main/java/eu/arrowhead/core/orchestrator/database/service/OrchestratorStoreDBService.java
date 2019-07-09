@@ -367,6 +367,29 @@ public class OrchestratorStoreDBService {
 		}
 	}
 	
+	//-------------------------------------------------------------------------------------------------	
+	public OrchestratorStoreListResponseDTO getEntriesForSecureConsumerResponse(String consumerSystemName) {
+		logger.debug("getEntriesForSecureConsumerResponse started...");
+		
+		try {
+			
+			if (Utilities.isEmpty(consumerSystemName.trim())) {
+				throw new InvalidParameterException("ConsumerSystemName " + EMPTY_OR_NULL_ERROR_MESAGE);
+			}
+			
+			List<OrchestratorStore> orchestratorStoreList = orchestratorStoreRepository.findAllByConsumerSystemName(consumerSystemName);
+			//TODO implement auth type check
+			
+			return DTOConverter.convertOrchestratorStoreEntryListToOrchestratorStoreListResponseDTO(orchestratorStoreList);
+			
+		} catch (final InvalidParameterException ex) {
+			throw ex;
+		} catch (final Exception ex) {
+			logger.debug(ex.getMessage(), ex);
+			throw new ArrowheadException(CommonConstants.DATABASE_OPERATION_EXCEPTION_MSG);
+		}
+	}
+	
 	//=================================================================================================
 	// assistant methods
 

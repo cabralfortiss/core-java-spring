@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -77,7 +79,11 @@ public class OrchestratorStoreController {
 			"/servicedef/{" + 
 			PATH_VARIABLE_SERVICEDEFINITION + 
 			"}";
+	private static final String ORCHESTRATOR_STORE_QUERY_URI = CommonConstants.ORCHESTRATOR_STORE_URI + "/query";
 	
+	private static final String GET_ORCHESTRATOR_STORE_HTTP_200_MESSAGE = "OrchestratorStore by requested parameters returned";
+	private static final String GET_ORCHESTRATOR_STORE_HTTP_400_MESSAGE = "No Such OrchestratorStore by requested id";
+
 	private static final String NOT_VALID_PARAMETERS_ERROR_MESSAGE = "Not valid request parameters.";
 	private static final String ID_NOT_VALID_ERROR_MESSAGE = "Id must be greater than 0. ";
 	private static final String NULL_PARAMETERS_ERROR_MESSAGE = " is null.";
@@ -327,8 +333,8 @@ public class OrchestratorStoreController {
 	//-------------------------------------------------------------------------------------------------
 	@ApiOperation(value = "Return requested OrchestratorStore entries by the given parameters", response = OrchestratorStoreListResponseDTO.class)
 	@ApiResponses (value = {
-			@ApiResponse(code = HttpStatus.SC_OK, message = GET_ORCHESTRATOR_STORE_MGMT_HTTP_200_MESSAGE),
-			@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = GET_ORCHESTRATOR_STORE_MGMT_HTTP_400_MESSAGE),
+			@ApiResponse(code = HttpStatus.SC_OK, message = GET_ORCHESTRATOR_STORE_HTTP_200_MESSAGE),
+			@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = GET_ORCHESTRATOR_STORE_HTTP_400_MESSAGE),
 			@ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = CommonConstants.SWAGGER_HTTP_401_MESSAGE),
 			@ApiResponse(code = HttpStatus.SC_INTERNAL_SERVER_ERROR, message = CommonConstants.SWAGGER_HTTP_500_MESSAGE)
 	})
@@ -349,8 +355,8 @@ public class OrchestratorStoreController {
 	//-------------------------------------------------------------------------------------------------
 	@ApiOperation(value = "Return requested OrchestratorStore entries by the given parameters", response = OrchestratorStoreListResponseDTO.class)
 	@ApiResponses (value = {
-			@ApiResponse(code = HttpStatus.SC_OK, message = GET_ORCHESTRATOR_STORE_MGMT_HTTP_200_MESSAGE),
-			@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = GET_ORCHESTRATOR_STORE_MGMT_HTTP_400_MESSAGE),
+			@ApiResponse(code = HttpStatus.SC_OK, message = GET_ORCHESTRATOR_STORE_HTTP_200_MESSAGE),
+			@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = GET_ORCHESTRATOR_STORE_HTTP_400_MESSAGE),
 			@ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = CommonConstants.SWAGGER_HTTP_401_MESSAGE),
 			@ApiResponse(code = HttpStatus.SC_INTERNAL_SERVER_ERROR, message = CommonConstants.SWAGGER_HTTP_500_MESSAGE)
 	})
@@ -361,16 +367,36 @@ public class OrchestratorStoreController {
 		logger.debug("getStoreEntries started ...");
 		
 		if (Utilities.isEmpty(consumerSystemName)) {
-			throw new BadPayloadException("ConsumerSystemName" + EMPTY_PARAMETERS_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST, ORCHESTRATOR_STORE_BY_CONSUMER_URI);
+			throw new BadPayloadException("ConsumerSystemName" + EMPTY_PARAMETERS_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST, ORCHESTRATOR_STORE_BY_CONSUMER_AND_SERVICEDEFINITION_URI);
 		}
 		if (Utilities.isEmpty(serviceDefinition)) {
-			throw new BadPayloadException("ServiceDefinition" + EMPTY_PARAMETERS_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST, ORCHESTRATOR_STORE_BY_CONSUMER_URI);
+			throw new BadPayloadException("ServiceDefinition" + EMPTY_PARAMETERS_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST, ORCHESTRATOR_STORE_BY_CONSUMER_AND_SERVICEDEFINITION_URI);
 		}
 		
 		final String validConsumerSystemName = consumerSystemName.trim().toLowerCase();
 		final String validServiceDefinition = serviceDefinition.trim().toLowerCase();
 		
 		final OrchestratorStoreListResponseDTO orchestratorStoreResponse = orchestratorStoreDBService.getStoreEntriesResponse(validConsumerSystemName, validServiceDefinition);
+		logger.debug("OrchestratorStores retrieved successfully");
+		return orchestratorStoreResponse;
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@ApiOperation(value = "Return requested OrchestratorStore entries by the given parameters", response = OrchestratorStoreListResponseDTO.class)
+	@ApiResponses (value = {
+			@ApiResponse(code = HttpStatus.SC_OK, message = GET_ORCHESTRATOR_STORE_HTTP_200_MESSAGE),
+			@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = GET_ORCHESTRATOR_STORE_HTTP_400_MESSAGE),
+			@ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = CommonConstants.SWAGGER_HTTP_401_MESSAGE),
+			@ApiResponse(code = HttpStatus.SC_INTERNAL_SERVER_ERROR, message = CommonConstants.SWAGGER_HTTP_500_MESSAGE)
+	})
+	@GetMapping(path = ORCHESTRATOR_STORE_QUERY_URI, produces = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody public OrchestratorStoreListResponseDTO getEntriesForSecureConsumer() {
+		logger.debug("getEntriesForSecureConsumer started ...");  
+	    
+		//TODO implement auth type check
+	    final String consumerSystemName = getSystemNameFromContext();
+		
+		final OrchestratorStoreListResponseDTO orchestratorStoreResponse = orchestratorStoreDBService.getEntriesForSecureConsumerResponse(consumerSystemName);
 		logger.debug("OrchestratorStores retrieved successfully");
 		return orchestratorStoreResponse;
 	}
@@ -502,6 +528,18 @@ public class OrchestratorStoreController {
 			throw new BadPayloadException(MODIFY_PRIORITY_MAP_PRIORITY_DUPLICATION_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST, origin);
 		}
 
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private String getSystemNameFromContext() {
+		
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		String subjectName = auth.getName();
+	    String clientCN = Utilities.getCertCNFromSubject(subjectName);
+	    String[] clientFields = clientCN.split("\\.", 2);    
+	    
+	    return clientFields[0];
+		
 	}
 
 }
