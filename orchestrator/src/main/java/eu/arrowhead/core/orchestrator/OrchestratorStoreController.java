@@ -92,6 +92,7 @@ public class OrchestratorStoreController {
 	private static final String NULL_PARAMETERS_ERROR_MESSAGE = " is null.";
 	private static final String EMPTY_PARAMETERS_ERROR_MESSAGE = " is empty.";
 	private static final String MODIFY_PRIORITY_MAP_PRIORITY_DUPLICATION_ERROR_MESSAGE = "PriorityMap has duplicated priority value";
+	private static final String SECURE_CALL_IN_INSCURE_MODE_ERROR_MESSAGE = "This endpoint can only be called in secure mode!";
 	
 	private final Logger logger = LogManager.getLogger(OrchestratorStoreController.class);
 	
@@ -106,6 +107,9 @@ public class OrchestratorStoreController {
 	
 	@Autowired
 	private OrchestratorStoreDBService orchestratorStoreDBService;
+	
+	@Value(CommonConstants.$SERVER_SSL_ENABLED_WD)
+	private boolean secure;
 	
 	//=================================================================================================
 	// methods
@@ -396,6 +400,10 @@ public class OrchestratorStoreController {
 	@ResponseBody public OrchestratorStoreListResponseDTO getEntriesForSecureConsumer() {
 		logger.debug("getEntriesForSecureConsumer started ...");  
 	    
+	    if (!secure) {
+	        logger.error("getEntriesForSecureConsumer called in insecure mode");
+	        throw new BadPayloadException(SECURE_CALL_IN_INSCURE_MODE_ERROR_MESSAGE);
+	      }
 		//TODO implement auth type check
 	    final String consumerSystemName = getSystemNameFromContext();
 		
