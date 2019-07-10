@@ -32,7 +32,6 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.dto.OrchestratorStoreListResponseDTO;
 import eu.arrowhead.common.dto.OrchestratorStoreModifyPriorityRequestDTO;
 import eu.arrowhead.common.dto.OrchestratorStoreRequestByIdDTO;
-import eu.arrowhead.common.dto.OrchestratorStoreRequestDTO;
 import eu.arrowhead.common.dto.OrchestratorStoreResponseDTO;
 import eu.arrowhead.common.exception.BadPayloadException;
 import eu.arrowhead.core.orchestrator.database.service.OrchestratorStoreDBService;
@@ -63,13 +62,18 @@ public class OrchestratorStoreController {
 	private static final String GET_ORCHESTRATOR_STORE_MGMT_BY_ID_HTTP_400_MESSAGE = "No Such OrchestratorStore by requested id";
 	private static final String GET_ORCHESTRATOR_STORE_MGMT_HTTP_200_MESSAGE = "OrchestratorStores by requested parameters returned";
 	private static final String GET_ORCHESTRATOR_STORE_MGMT_HTTP_400_MESSAGE = "No Such OrchestratorStore by requested parameters";
+	private static final String GET_TOP_PRIORITY_ORCHESTRATOR_STORE_MGMT_HTTP_200_MESSAGE = "Top Priotity OrchestratorStores returned";
+	private static final String GET_TOP_PRIORITY_ORCHESTRATOR_STORE_MGMT_HTTP_400_MESSAGE = "Could not find Top Priotity OrchestratorStores";
+	private static final String PUT_ORCHESTRATOR_STORE_MGMT_HTTP_200_MESSAGE = "OrchestratorStores by requested parameters returned";
+	private static final String PUT_ORCHESTRATOR_STORE_MGMT_HTTP_400_MESSAGE = "No Such OrchestratorStore by requested parameters";
 	private static final String POST_ORCHESTRATOR_STORE_MGMT_HTTP_200_MESSAGE = "OrchestratorStores by requested parameters created";
 	private static final String POST_ORCHESTRATOR_STORE_MGMT_HTTP_400_MESSAGE = "Could not create OrchestratorStore by requested parameters";
 	private static final String DELETE_ORCHESTRATOR_STORE_MGMT_HTTP_200_MESSAGE = "OrchestratorStore removed";
 	private static final String DELETE_ORCHESTRATOR_STORE_MGMT_HTTP_400_MESSAGE = "Could not remove OrchestratorStore";
-	private static final String POST_ORCHESTRATOR_STORE_MGMT_MODIFY_HTTP_200_MESSAGE = "OrchestratorStores by requested parameters created";
-	private static final String POST_ORCHESTRATOR_STORE_MGMT_MODIFY_HTTP_400_MESSAGE = "Could not create OrchestratorStore by requested parameters";
+	private static final String POST_ORCHESTRATOR_STORE_MGMT_MODIFY_HTTP_200_MESSAGE = "OrchestratorStores by requested parameters modified";
+	private static final String POST_ORCHESTRATOR_STORE_MGMT_MODIFY_HTTP_400_MESSAGE = "Could not modify OrchestratorStore by requested parameters";
 	
+
 	private static final String ORCHESTRATOR_STORE_BY_CONSUMER_URI = CommonConstants.ORCHESTRATOR_STORE_URI + "/consumername/{" + PATH_VARIABLE_SYSTEM_NAME + "}";
 	private static final String ORCHESTRATOR_STORE_BY_CONSUMER_AND_SERVICEDEFINITION_URI = 
 			CommonConstants.ORCHESTRATOR_STORE_URI + 
@@ -84,7 +88,6 @@ public class OrchestratorStoreController {
 	private static final String GET_ORCHESTRATOR_STORE_HTTP_200_MESSAGE = "OrchestratorStore by requested parameters returned";
 	private static final String GET_ORCHESTRATOR_STORE_HTTP_400_MESSAGE = "No Such OrchestratorStore by requested id";
 
-	private static final String NOT_VALID_PARAMETERS_ERROR_MESSAGE = "Not valid request parameters.";
 	private static final String ID_NOT_VALID_ERROR_MESSAGE = "Id must be greater than 0. ";
 	private static final String NULL_PARAMETERS_ERROR_MESSAGE = " is null.";
 	private static final String EMPTY_PARAMETERS_ERROR_MESSAGE = " is empty.";
@@ -178,8 +181,8 @@ public class OrchestratorStoreController {
 	//-------------------------------------------------------------------------------------------------
 	@ApiOperation(value = "Return requested OrchestratorStore entries by the given parameters", response = OrchestratorStoreListResponseDTO.class)
 	@ApiResponses (value = {
-			@ApiResponse(code = HttpStatus.SC_OK, message = GET_ORCHESTRATOR_STORE_MGMT_HTTP_200_MESSAGE),
-			@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = GET_ORCHESTRATOR_STORE_MGMT_HTTP_400_MESSAGE),
+			@ApiResponse(code = HttpStatus.SC_OK, message = GET_TOP_PRIORITY_ORCHESTRATOR_STORE_MGMT_HTTP_200_MESSAGE),
+			@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = GET_TOP_PRIORITY_ORCHESTRATOR_STORE_MGMT_HTTP_400_MESSAGE),
 			@ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = CommonConstants.SWAGGER_HTTP_401_MESSAGE),
 			@ApiResponse(code = HttpStatus.SC_INTERNAL_SERVER_ERROR, message = CommonConstants.SWAGGER_HTTP_500_MESSAGE)
 	})
@@ -215,8 +218,8 @@ public class OrchestratorStoreController {
 	//-------------------------------------------------------------------------------------------------
 	@ApiOperation(value = "Return requested OrchestratorStore entries specified by the consumer (and the service).", response = OrchestratorStoreListResponseDTO.class)
 	@ApiResponses (value = {
-			@ApiResponse(code = HttpStatus.SC_OK, message = GET_ORCHESTRATOR_STORE_MGMT_HTTP_200_MESSAGE),
-			@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = GET_ORCHESTRATOR_STORE_MGMT_HTTP_400_MESSAGE),
+			@ApiResponse(code = HttpStatus.SC_OK, message = PUT_ORCHESTRATOR_STORE_MGMT_HTTP_200_MESSAGE),
+			@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = PUT_ORCHESTRATOR_STORE_MGMT_HTTP_400_MESSAGE),
 			@ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = CommonConstants.SWAGGER_HTTP_401_MESSAGE),
 			@ApiResponse(code = HttpStatus.SC_INTERNAL_SERVER_ERROR, message = CommonConstants.SWAGGER_HTTP_500_MESSAGE)
 	})
@@ -431,21 +434,6 @@ public class OrchestratorStoreController {
 		}
 		
 	}
-
-	//-------------------------------------------------------------------------------------------------	
-	private void checkOrchestratorStoreRequestDTOList(final List<OrchestratorStoreRequestDTO> request, final String origin) {
-		logger.debug("checkOrchestratorStoreRequestDTOList started ...");
-		
-		if (request == null) {
-			throw new BadPayloadException("Request "+ NULL_PARAMETERS_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST, origin);
-		}
-		
-		if ( request.isEmpty()) {
-			throw new BadPayloadException("Request "+ EMPTY_PARAMETERS_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST, origin);
-		}
-
-		//TODO Additional validations/REST-call chechs, etc.
-	}
 	
 	//-------------------------------------------------------------------------------------------------	
 	private void checkOrchestratorStoreRequestByIdDTOList(final List<OrchestratorStoreRequestByIdDTO> request, final String origin) {
@@ -489,14 +477,6 @@ public class OrchestratorStoreController {
 		}
 		
 		return validatedDirection;
-	}
-	
-	//-------------------------------------------------------------------------------------------------
-	private String getserviceRegistryURL() {
-		logger.debug("getserviceRegistryURL started ...");
-		
-		return "http://" + serviceRegistryAddress + ":" + serviceRegistryPort + CommonConstants.SERVICE_REGISTRY_URI;
-
 	}
 
 	//-------------------------------------------------------------------------------------------------
